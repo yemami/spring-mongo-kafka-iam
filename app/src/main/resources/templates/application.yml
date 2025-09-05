@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: spring-mongo-kafka-iam
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+# -------- local profile --------
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/devdb
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+        spring.json.trusted.packages: "*"
+      acks: all
+      enable-idempotence: true
+    consumer:
+      group-id: task-consumer-local
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: RECORD
+
+# -------- atlas profile (mongo with AWS IAM) --------
+---
+spring:
+  config:
+    activate:
+      on-profile: atlas
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb+srv://CLUSTER_HOST/DB?authSource=%24external&authMechanism=MONGODB-AWS}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+        spring.json.trusted.packages: "*"
+      acks: all
+      enable-idempotence: true
+    consumer:
+      group-id: task-consumer-uat
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+      auto-offset-reset: latest
+      enable-auto-commit: false
+    listener:
+      ack-mode: RECORD
